@@ -1,0 +1,47 @@
+Para un proyecto escolar, existen excelentes opciones gratuitas que te permitirán desplegar todo tu stack (**Angular + Python + MySQL**) sin gastar un centavo. Dado que usas **XAMPP** para desarrollo local, el mayor cambio será mover la base de datos de tu PC a la nube.
+
+Aquí tienes el plan de despliegue gratuito recomendado:
+
+### 1. ¿Dónde desplegar cada parte?
+
+| Componente | Plataforma Recomendada | Por qué? |
+| --- | --- | --- |
+| **Frontend (Angular)** | **Vercel** o **Netlify** | Ofrecen despliegue automático desde GitHub, son extremadamente rápidos y gratis para proyectos personales. |
+| **Backend (Python)** | **Render** o **Railway** | Tienen planes gratuitos excelentes para Python (FastAPI/Flask). **Render** es muy popular para estudiantes. |
+| **Base de Datos (MySQL)** | **Aiven** o **Railway** | <br>**Aiven** ofrece una instancia gratuita de MySQL en la nube (5GB), ideal para un proyecto escolar que maneja textos y registros .
+
+ |
+
+---
+
+### 2. Estructura de Conexión en la Nube
+
+### 3. Consideraciones importantes para el despliegue
+
+* **Variables de Entorno:** Nunca subas tus contraseñas de la base de datos a GitHub. En **Render** y **Vercel**, configurarás "Environment Variables" para que el código se conecte de forma segura.
+* 
+**Almacenamiento de Imágenes:** Como el proyecto requiere subir evidencias (fotos de "No Conforme") y firmas PNG, los servicios gratuitos como Render borran los archivos locales cada vez que se reinician.
+
+
+* **Solución:** Usa **Cloudinary** (tiene un plan gratuito gigante). Python recibe la imagen, la manda a Cloudinary, y guarda solo el *link* en MySQL.
+
+
+
+
+* 
+**CORS:** Al desplegar, deberás configurar tu backend de Python para que acepte peticiones desde la URL de tu frontend en Vercel, de lo contrario, Angular no podrá obtener los datos .
+
+
+
+### 4. Flujo de trabajo para subir tu proyecto
+
+1. **GitHub:** Crea un repositorio (puedes tener uno para el back y otro para el front).
+2. **Base de Datos:** Crea tu cuenta en **Aiven**, elige MySQL gratis y ejecuta el script de tablas que armamos anteriormente.
+3. **Backend (Python):** Conéctalo a Render desde tu GitHub. Configura la conexión usando los datos que te dio Aiven.
+4. **Frontend (Angular):** Conéctalo a Vercel. Asegúrate de cambiar la URL de tu API local (`localhost`) por la URL que te dé Render.
+
+### 5. Sobre el "Modo Offline" y el Despliegue
+
+Incluso estando desplegado en la nube, tu aplicación podrá funcionar sin internet gracias a que Angular usará el **Service Worker** y **IndexedDB** del navegador. Cuando el instructor recupere la conexión, el frontend enviará los datos acumulados a tu URL de Render.
+
+**¿Te gustaría que te ayude a configurar el archivo `database.py` en Python para que pueda conectarse tanto a tu XAMPP local como a una base de datos en la nube (Aiven) automáticamente?** Es el primer paso técnico para el despliegue.

@@ -1,0 +1,5 @@
+C:\Users\HAIER\Documents\inspec>cd backend
+
+C:\Users\HAIER\Documents\inspec\backend>venv\Scripts\activate
+
+uvicorn main:app --reload

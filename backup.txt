@@ -1,0 +1,354 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 02-03-2026 a las 05:07:15
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `inspeccioninsti`
+--
+CREATE DATABASE IF NOT EXISTS `inspeccioninsti` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `inspeccioninsti`;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `acciones_correctivas`
+--
+
+DROP TABLE IF EXISTS `acciones_correctivas`;
+CREATE TABLE `acciones_correctivas` (
+  `id` int(11) NOT NULL,
+  `inspeccion_id` int(11) DEFAULT NULL,
+  `item_id` int(11) DEFAULT NULL,
+  `accion_tomar` text NOT NULL,
+  `plazo` date NOT NULL,
+  `responsable_ejecucion` varchar(100) DEFAULT NULL,
+  `estado_seguimiento` enum('Pendiente','En Proceso','Corregido') DEFAULT 'Pendiente',
+  `seguimiento_efectividad` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `ambientes`
+--
+
+DROP TABLE IF EXISTS `ambientes`;
+CREATE TABLE `ambientes` (
+  `id` int(11) NOT NULL,
+  `area_id` int(11) DEFAULT NULL,
+  `nombre_ambiente` varchar(100) NOT NULL,
+  `codigo_ambiente` varchar(20) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `categorias`
+--
+
+DROP TABLE IF EXISTS `categorias`;
+CREATE TABLE `categorias` (
+  `id` int(11) NOT NULL,
+  `seccion` enum('I Condiciones subestándares','II Actos subestándares') NOT NULL,
+  `nombre` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inspecciones`
+--
+
+DROP TABLE IF EXISTS `inspecciones`;
+CREATE TABLE `inspecciones` (
+  `id` int(11) NOT NULL,
+  `uuid` varchar(36) NOT NULL,
+  `ambiente_id` int(11) DEFAULT NULL,
+  `instructor_id` int(11) DEFAULT NULL,
+  `inspector_id` int(11) DEFAULT NULL,
+  `fecha_creacion` date DEFAULT NULL,
+  `timestamp_envio` datetime DEFAULT NULL,
+  `timestamp_firma_inspector` datetime DEFAULT NULL,
+  `estado` enum('Borrador','Enviado','Observado','Finalizado') DEFAULT 'Borrador'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inspeccion_detalles`
+--
+
+DROP TABLE IF EXISTS `inspeccion_detalles`;
+CREATE TABLE `inspeccion_detalles` (
+  `id` int(11) NOT NULL,
+  `inspeccion_id` int(11) DEFAULT NULL,
+  `item_id` int(11) DEFAULT NULL,
+  `resultado` enum('Conforme','No Conforme','No Aplica') NOT NULL,
+  `observacion` text DEFAULT NULL,
+  `evidencia_url` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `items_verificacion`
+--
+
+DROP TABLE IF EXISTS `items_verificacion`;
+CREATE TABLE `items_verificacion` (
+  `id` int(11) NOT NULL,
+  `categoria_id` int(11) DEFAULT NULL,
+  `codigo` varchar(10) DEFAULT NULL,
+  `descripcion` text NOT NULL,
+  `tipo_asignacion` enum('General','Especifico') DEFAULT 'General',
+  `area_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `notificaciones`
+--
+
+DROP TABLE IF EXISTS `notificaciones`;
+CREATE TABLE `notificaciones` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `titulo` varchar(100) DEFAULT NULL,
+  `mensaje` text DEFAULT NULL,
+  `tipo` enum('Nuevo_Formulario','Alerta_Plazo','Firma_Pendiente') NOT NULL,
+  `leido` tinyint(1) DEFAULT 0,
+  `fecha_creacion` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sedes_areas`
+--
+
+DROP TABLE IF EXISTS `sedes_areas`;
+CREATE TABLE `sedes_areas` (
+  `id` int(11) NOT NULL,
+  `nombre_sede` varchar(100) NOT NULL,
+  `nombre_area` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+DROP TABLE IF EXISTS `usuarios`;
+CREATE TABLE `usuarios` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `correo_insti` varchar(100) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `cargo` enum('Instructor','Inspector','Administrador') NOT NULL,
+  `firma_url` varchar(255) DEFAULT NULL,
+  `area_id` int(11) DEFAULT NULL,
+  `token_notificacion` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `acciones_correctivas`
+--
+ALTER TABLE `acciones_correctivas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `inspeccion_id` (`inspeccion_id`),
+  ADD KEY `item_id` (`item_id`);
+
+--
+-- Indices de la tabla `ambientes`
+--
+ALTER TABLE `ambientes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `area_id` (`area_id`);
+
+--
+-- Indices de la tabla `categorias`
+--
+ALTER TABLE `categorias`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `inspecciones`
+--
+ALTER TABLE `inspecciones`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uuid` (`uuid`),
+  ADD KEY `ambiente_id` (`ambiente_id`),
+  ADD KEY `instructor_id` (`instructor_id`),
+  ADD KEY `inspector_id` (`inspector_id`);
+
+--
+-- Indices de la tabla `inspeccion_detalles`
+--
+ALTER TABLE `inspeccion_detalles`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `inspeccion_id` (`inspeccion_id`),
+  ADD KEY `item_id` (`item_id`);
+
+--
+-- Indices de la tabla `items_verificacion`
+--
+ALTER TABLE `items_verificacion`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `categoria_id` (`categoria_id`),
+  ADD KEY `area_id` (`area_id`);
+
+--
+-- Indices de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
+-- Indices de la tabla `sedes_areas`
+--
+ALTER TABLE `sedes_areas`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `correo_insti` (`correo_insti`),
+  ADD KEY `area_id` (`area_id`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `acciones_correctivas`
+--
+ALTER TABLE `acciones_correctivas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `ambientes`
+--
+ALTER TABLE `ambientes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `categorias`
+--
+ALTER TABLE `categorias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `inspecciones`
+--
+ALTER TABLE `inspecciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `inspeccion_detalles`
+--
+ALTER TABLE `inspeccion_detalles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `items_verificacion`
+--
+ALTER TABLE `items_verificacion`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `sedes_areas`
+--
+ALTER TABLE `sedes_areas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `acciones_correctivas`
+--
+ALTER TABLE `acciones_correctivas`
+  ADD CONSTRAINT `acciones_correctivas_ibfk_1` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`),
+  ADD CONSTRAINT `acciones_correctivas_ibfk_2` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
+
+--
+-- Filtros para la tabla `ambientes`
+--
+ALTER TABLE `ambientes`
+  ADD CONSTRAINT `ambientes_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+
+--
+-- Filtros para la tabla `inspecciones`
+--
+ALTER TABLE `inspecciones`
+  ADD CONSTRAINT `inspecciones_ibfk_1` FOREIGN KEY (`ambiente_id`) REFERENCES `ambientes` (`id`),
+  ADD CONSTRAINT `inspecciones_ibfk_2` FOREIGN KEY (`instructor_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `inspecciones_ibfk_3` FOREIGN KEY (`inspector_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `inspeccion_detalles`
+--
+ALTER TABLE `inspeccion_detalles`
+  ADD CONSTRAINT `inspeccion_detalles_ibfk_1` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`),
+  ADD CONSTRAINT `inspeccion_detalles_ibfk_2` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
+
+--
+-- Filtros para la tabla `items_verificacion`
+--
+ALTER TABLE `items_verificacion`
+  ADD CONSTRAINT `items_verificacion_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`),
+  ADD CONSTRAINT `items_verificacion_ibfk_2` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+
+--
+-- Filtros para la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

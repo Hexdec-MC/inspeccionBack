@@ -1,0 +1,6 @@
+/backend_python
+├── main.py           # Rutas de la API (FastAPI)
+├── database.py       # Conexión a MySQL (XAMPP)
+├── auth.py           # Login y cargos (Instructor/Inspector)
+├── excel_handler.py  # Lógica con Pandas para subir las preguntas
+└── pdf_generator.py  # Lógica para crear el PDF final con las firmas

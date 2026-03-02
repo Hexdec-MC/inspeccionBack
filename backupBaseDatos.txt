@@ -1,0 +1,98 @@
+-- 1. ESTRUCTURA INSTITUCIONAL
+CREATE TABLE sedes_areas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_sede VARCHAR(100) NOT NULL,
+    nombre_area VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ambientes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    area_id INT,
+    nombre_ambiente VARCHAR(100) NOT NULL,
+    codigo_ambiente VARCHAR(20),
+    FOREIGN KEY (area_id) REFERENCES sedes_areas(id)
+);
+
+-- 2. USUARIOS Y FIRMAS
+CREATE TABLE usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    correo_insti VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    cargo ENUM('Instructor', 'Inspector', 'Administrador') NOT NULL,
+    firma_url VARCHAR(255),
+    area_id INT,
+    token_notificacion VARCHAR(255),
+    FOREIGN KEY (area_id) REFERENCES sedes_areas(id)
+);
+
+-- 3. CONFIGURACIÓN DEL FORMULARIO (ANEXO 03)
+CREATE TABLE categorias (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    seccion ENUM('I Condiciones subestándares', 'II Actos subestándares') NOT NULL,
+    nombre VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE items_verificacion (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    categoria_id INT,
+    codigo VARCHAR(10),
+    descripcion TEXT NOT NULL,
+    tipo_asignacion ENUM('General', 'Especifico') DEFAULT 'General',
+    area_id INT NULL,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+    FOREIGN KEY (area_id) REFERENCES sedes_areas(id)
+);
+
+-- 4. INSPECCIONES (SOPORTE OFFLINE)
+CREATE TABLE inspecciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    uuid VARCHAR(36) UNIQUE NOT NULL,
+    ambiente_id INT,
+    instructor_id INT,
+    inspector_id INT NULL,
+    fecha_creacion DATE,
+    timestamp_envio DATETIME,
+    timestamp_firma_inspector DATETIME NULL,
+    estado ENUM('Borrador', 'Enviado', 'Observado', 'Finalizado') DEFAULT 'Borrador',
+    FOREIGN KEY (ambiente_id) REFERENCES ambientes(id),
+    FOREIGN KEY (instructor_id) REFERENCES usuarios(id),
+    FOREIGN KEY (inspector_id) REFERENCES usuarios(id)
+);
+
+CREATE TABLE inspeccion_detalles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    inspeccion_id INT,
+    item_id INT,
+    resultado ENUM('Conforme', 'No Conforme', 'No Aplica') NOT NULL,
+    observacion TEXT,
+    evidencia_url VARCHAR(255),
+    FOREIGN KEY (inspeccion_id) REFERENCES inspecciones(id),
+    FOREIGN KEY (item_id) REFERENCES items_verificacion(id)
+);
+
+-- 5. ACCIONES CORRECTIVAS (REVERSO DEL PDF)
+CREATE TABLE acciones_correctivas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    inspeccion_id INT,
+    item_id INT,
+    accion_tomar TEXT NOT NULL,
+    plazo DATE NOT NULL,
+    responsable_ejecucion VARCHAR(100),
+    estado_seguimiento ENUM('Pendiente', 'En Proceso', 'Corregido') DEFAULT 'Pendiente',
+    seguimiento_efectividad TEXT,
+    FOREIGN KEY (inspeccion_id) REFERENCES inspecciones(id),
+    FOREIGN KEY (item_id) REFERENCES items_verificacion(id)
+);
+
+-- 6. NOTIFICACIONES
+CREATE TABLE notificaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT,
+    titulo VARCHAR(100),
+    mensaje TEXT,
+    tipo ENUM('Nuevo_Formulario', 'Alerta_Plazo', 'Firma_Pendiente') NOT NULL,
+    leido BOOLEAN DEFAULT FALSE,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
