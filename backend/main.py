@@ -9,22 +9,30 @@ from database import get_connection
 from models import InspeccionCreate, Login
 from excel_service import procesar_excel_anexo
 from pdf_service import generar_reporte_completo
+from fastapi.staticfiles import StaticFiles
 
 # Configuración de la API (Metadatos para la documentación)
 app = FastAPI(
     title="SST SENATI API",
     description="API REST para la gestión de inspecciones de seguridad y salud en el trabajo",
     version="1.0.0",
-    docs_url="/api/v1/d ocs",
+    docs_url="/api/v1/docs",
     openapi_url="/api/v1/openapi.json"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",  # Puerto por defecto de Vite/React Router v7
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",  # Mantener el 3000 por si acaso
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # --- RESPUESTAS ESTÁNDAR ---
 def api_response(status="success", data=None, message=""):
@@ -43,14 +51,21 @@ def notify_inspectors(cursor, uuid, ambiente_id):
 
 # [Auth]
 @app.post("/api/v1/auth/login", tags=["Autenticación"])
-def login(user: Login):
+def login(user: Login): # Usa el nombre de clase correcto
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, nombre, cargo, firma_url FROM usuarios WHERE correo_insti = %s", (user.correo,))
+    
+    # Buscamos el usuario
+    query = "SELECT id, nombre, cargo, firma_url FROM usuarios WHERE correo_insti = %s"
+    cursor.execute(query, (user.correo,))
     usuario = cursor.fetchone()
     conn.close()
-    if usuario: return api_response(data=usuario)
-    raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    
+    if usuario:
+        # Retornamos la respuesta estándar que definiste en el main
+        return api_response(data=usuario)
+        
+    raise HTTPException(status_code=401, detail="Usuario no encontrado")
 
 # [Inspecciones]
 @app.post("/api/v1/inspecciones", status_code=201, tags=["Inspecciones"])
@@ -82,9 +97,49 @@ def create_inspeccion(data: InspeccionCreate):
 
 @app.get("/api/v1/inspecciones/{uuid}/reporte", tags=["Inspecciones"])
 def get_reporte_pdf(uuid: str):
-    # Aquí iría la lógica de recuperación de datos y PDF que ya tenemos
-    # Se retorna FileResponse
-    return api_response(message="Generando PDF...")
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Obtener cabecera de la inspección
+        query_ins = """
+            SELECT i.*, a.nombre_ambiente as ambiente, s.nombre_sede as area 
+            FROM inspecciones i
+            JOIN ambientes a ON i.ambiente_id = a.id
+            JOIN sedes_areas s ON a.area_id = s.id
+            WHERE i.uuid = %s
+        """
+        cursor.execute(query_ins, (uuid,))
+        datos = cursor.fetchone()
+        
+        if not datos:
+            raise HTTPException(status_code=404, detail="Inspección no encontrada")
+
+        # 2. Obtener detalles con sus códigos de ítem
+        query_det = """
+            SELECT iv.codigo, iv.descripcion, id.resultado, id.observacion 
+            FROM inspeccion_detalles id
+            JOIN items_verificacion iv ON id.item_id = iv.id
+            WHERE id.inspeccion_id = %s
+        """
+        cursor.execute(query_det, (datos['id'],))
+        detalles = cursor.fetchall()
+
+        # 3. Obtener datos del instructor para la firma
+        cursor.execute("SELECT nombre, firma_url as firma_path FROM usuarios WHERE id = %s", (datos['instructor_id'],))
+        instructor = cursor.fetchone()
+
+        # 4. Llamar al servicio que creaste
+        ruta_pdf = generar_reporte_completo(datos, detalles, instructor)
+
+        return FileResponse(
+            path=ruta_pdf, 
+            filename=f"Reporte_SST_{uuid}.pdf", 
+            media_type='application/pdf'
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 # [Recursos/Maestros]
 @app.get("/api/v1/sedes", tags=["Recursos"])
@@ -104,3 +159,45 @@ def list_ambientes(sede_id: int = Query(...)):
     res = cursor.fetchall()
     conn.close()
     return api_response(data=res)
+
+@app.get("/api/v1/usuarios/{id_usuario}/programa", tags=["Programación"])
+def obtener_programa_usuario(id_usuario: int):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Usamos los nombres de columnas que vemos en tu captura de phpMyAdmin
+    query = """
+        SELECT 
+            p.id, 
+            p.tipo_inspeccion, 
+            p.fecha_programada,
+            p.estado,
+            a.nombre_ambiente,
+            s.nombre_sede
+        FROM programa p
+        JOIN ambientes a ON p.ambiente_id = a.id
+        JOIN sedes_areas s ON a.area_id = s.id
+        WHERE p.instructor_id = %s
+    """
+    
+    try:
+        cursor.execute(query, (id_usuario,))
+        programa = cursor.fetchall()
+        return api_response(data=programa)
+    except Exception as e:
+        print(f"Error SQL: {e}")
+        raise HTTPException(status_code=500, detail="Error al consultar el programa")
+    finally:
+        conn.close()
+
+@app.post("/api/v1/admin/upload-items", tags=["Administración"])
+async def upload_excel(file: UploadFile = File(...)):
+    conn = get_connection()
+    try:
+        total = procesar_excel_anexo(file, conn)
+        return api_response(message=f"Se procesaron {total} ítems correctamente")
+    finally:
+        conn.close()
+
+from storage_service import router as storage_router
+app.include_router(storage_router)

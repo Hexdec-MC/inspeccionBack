@@ -1,0 +1,18 @@
+# Crear un entorno virtual (para no mezclar librerías)
+primero instala python gil
+python -m venv venv
+
+# Activar el entorno virtual
+# En Windows:
+venv\Scripts\activate
+# En Linux/Mac:
+source venv/bin/activate
+
+# Instalar las librerías necesarias
+pip install fastapi uvicorn mysql-connector-python pandas openpyxl python-multipart
+
+pip install fpdf2
+
+pip install pandas openpyxl mysql-connector-python
+
+uvicorn main:app --reload

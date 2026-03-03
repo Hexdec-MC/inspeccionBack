@@ -83,10 +83,12 @@ def generar_reporte_completo(datos_inspeccion, detalles, instructor, inspector=N
     pdf.output(nombre_archivo)
     return nombre_archivo
 
+# Versión optimizada de la inserción de firma
 def insertar_firma_segura(pdf, path, x, y):
     if path and os.path.exists(path):
-        pdf.image(path, x=x, y=y, w=45, h=18)
+        # El parámetro 'w' y 'h' ajustan la firma al recuadro del formato
+        pdf.image(path, x=x, y=y, w=40, h=15)
     else:
-        pdf.set_xy(x, y)
-        pdf.set_font("Arial", "I", 8)
-        pdf.cell(45, 10, "Firma no disponible", border=1)
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.set_xy(x, y + 5)
+        pdf.cell(45, 10, "PENDIENTE DE FIRMA", ln=0, align='C')

@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* 1. Definimos variables personalizadas */
+:root {
+  --senati-blue: #003399;
+}
+
+/* 2. Estilos globales usando @theme o CSS estándar */
+@layer base {
+  body {
+    /* En v4, si vas a usar @apply, asegúrate de que sea dentro de una capa */
+    @apply bg-gray-50 text-gray-900 antialiased;
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* 3. Componentes personalizados */
+.btn-senati {
+  background-color: var(--senati-blue);
+  @apply text-white px-4 py-2 rounded shadow transition-all;
+}
+
+.btn-senati:hover {
+  @apply bg-blue-800;
+}

@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+mysql-connector-python
+pydantic[email]
+pandas
+openpyxl
+fpdf2
+python-multipart

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 02-03-2026 a las 05:07:15
+-- Tiempo de generación: 03-03-2026 a las 11:50:22
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -36,9 +36,7 @@ CREATE TABLE `acciones_correctivas` (
   `item_id` int(11) DEFAULT NULL,
   `accion_tomar` text NOT NULL,
   `plazo` date NOT NULL,
-  `responsable_ejecucion` varchar(100) DEFAULT NULL,
-  `estado_seguimiento` enum('Pendiente','En Proceso','Corregido') DEFAULT 'Pendiente',
-  `seguimiento_efectividad` text DEFAULT NULL
+  `estado_seguimiento` enum('Pendiente','En Proceso','Corregido') DEFAULT 'Pendiente'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -55,6 +53,14 @@ CREATE TABLE `ambientes` (
   `codigo_ambiente` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `ambientes`
+--
+
+INSERT INTO `ambientes` (`id`, `area_id`, `nombre_ambiente`, `codigo_ambiente`) VALUES
+(1, 1, 'Mecánica de Ajuste', 'MA-01'),
+(2, 2, 'Laboratorio 302', 'LAB-302');
+
 -- --------------------------------------------------------
 
 --
@@ -67,6 +73,14 @@ CREATE TABLE `categorias` (
   `seccion` enum('I Condiciones subestándares','II Actos subestándares') NOT NULL,
   `nombre` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `categorias`
+--
+
+INSERT INTO `categorias` (`id`, `seccion`, `nombre`) VALUES
+(1, 'I Condiciones subestándares', 'Protección contra incendios'),
+(2, 'I Condiciones subestándares', 'Instalaciones Eléctricas');
 
 -- --------------------------------------------------------
 
@@ -81,10 +95,9 @@ CREATE TABLE `inspecciones` (
   `ambiente_id` int(11) DEFAULT NULL,
   `instructor_id` int(11) DEFAULT NULL,
   `inspector_id` int(11) DEFAULT NULL,
-  `fecha_creacion` date DEFAULT NULL,
-  `timestamp_envio` datetime DEFAULT NULL,
-  `timestamp_firma_inspector` datetime DEFAULT NULL,
-  `estado` enum('Borrador','Enviado','Observado','Finalizado') DEFAULT 'Borrador'
+  `fecha_creacion` date NOT NULL,
+  `estado` enum('Borrador','Enviado','Observado','Finalizado') DEFAULT 'Borrador',
+  `observaciones_generales` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -113,28 +126,42 @@ DROP TABLE IF EXISTS `items_verificacion`;
 CREATE TABLE `items_verificacion` (
   `id` int(11) NOT NULL,
   `categoria_id` int(11) DEFAULT NULL,
-  `codigo` varchar(10) DEFAULT NULL,
-  `descripcion` text NOT NULL,
-  `tipo_asignacion` enum('General','Especifico') DEFAULT 'General',
-  `area_id` int(11) DEFAULT NULL
+  `codigo` varchar(10) NOT NULL,
+  `descripcion` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `items_verificacion`
+--
+
+INSERT INTO `items_verificacion` (`id`, `categoria_id`, `codigo`, `descripcion`) VALUES
+(1, 1, '1.1', 'Extintores con carga vigente y señalizados'),
+(2, 1, '1.2', 'Libre acceso a los extintores'),
+(3, 2, '4.1', 'Tableros eléctricos con señalización de riesgo'),
+(4, 2, '4.2', 'Cables expuestos o en mal estado');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `notificaciones`
+-- Estructura de tabla para la tabla `programa`
 --
 
-DROP TABLE IF EXISTS `notificaciones`;
-CREATE TABLE `notificaciones` (
+DROP TABLE IF EXISTS `programa`;
+CREATE TABLE `programa` (
   `id` int(11) NOT NULL,
-  `usuario_id` int(11) DEFAULT NULL,
-  `titulo` varchar(100) DEFAULT NULL,
-  `mensaje` text DEFAULT NULL,
-  `tipo` enum('Nuevo_Formulario','Alerta_Plazo','Firma_Pendiente') NOT NULL,
-  `leido` tinyint(1) DEFAULT 0,
-  `fecha_creacion` datetime DEFAULT current_timestamp()
+  `ambiente_id` int(11) DEFAULT NULL,
+  `instructor_id` int(11) DEFAULT NULL,
+  `fecha_programada` date NOT NULL,
+  `tipo_inspeccion` enum('Ordinaria','Inopinada') DEFAULT 'Ordinaria',
+  `estado` enum('Pendiente','Realizada','Cancelada') DEFAULT 'Pendiente'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `programa`
+--
+
+INSERT INTO `programa` (`id`, `ambiente_id`, `instructor_id`, `fecha_programada`, `tipo_inspeccion`, `estado`) VALUES
+(1, 1, 1, '2026-03-05', '', 'Pendiente');
 
 -- --------------------------------------------------------
 
@@ -148,6 +175,14 @@ CREATE TABLE `sedes_areas` (
   `nombre_sede` varchar(100) NOT NULL,
   `nombre_area` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `sedes_areas`
+--
+
+INSERT INTO `sedes_areas` (`id`, `nombre_sede`, `nombre_area`) VALUES
+(1, 'Lima - Independencia', 'Taller de Mecánica'),
+(2, 'Lima - Independencia', 'Laboratorio de Software');
 
 -- --------------------------------------------------------
 
@@ -163,9 +198,17 @@ CREATE TABLE `usuarios` (
   `password_hash` varchar(255) NOT NULL,
   `cargo` enum('Instructor','Inspector','Administrador') NOT NULL,
   `firma_url` varchar(255) DEFAULT NULL,
-  `area_id` int(11) DEFAULT NULL,
-  `token_notificacion` varchar(255) DEFAULT NULL
+  `area_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id`, `nombre`, `correo_insti`, `password_hash`, `cargo`, `firma_url`, `area_id`) VALUES
+(1, 'Admin SST', 'admin@senati.pe', 'admin123', 'Administrador', NULL, NULL),
+(2, 'Juan Instructor', 'juan@senati.pe', 'inst123', 'Instructor', NULL, 1),
+(3, 'Pedro Inspector', 'pedro@senati.pe', 'insp123', 'Inspector', NULL, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -176,15 +219,15 @@ CREATE TABLE `usuarios` (
 --
 ALTER TABLE `acciones_correctivas`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `inspeccion_id` (`inspeccion_id`),
-  ADD KEY `item_id` (`item_id`);
+  ADD KEY `fk_acc_insp` (`inspeccion_id`),
+  ADD KEY `fk_acc_item` (`item_id`);
 
 --
 -- Indices de la tabla `ambientes`
 --
 ALTER TABLE `ambientes`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `area_id` (`area_id`);
+  ADD KEY `fk_ambiente_area` (`area_id`);
 
 --
 -- Indices de la tabla `categorias`
@@ -198,32 +241,33 @@ ALTER TABLE `categorias`
 ALTER TABLE `inspecciones`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uuid` (`uuid`),
-  ADD KEY `ambiente_id` (`ambiente_id`),
-  ADD KEY `instructor_id` (`instructor_id`),
-  ADD KEY `inspector_id` (`inspector_id`);
+  ADD KEY `fk_insp_amb` (`ambiente_id`),
+  ADD KEY `fk_insp_inst` (`instructor_id`),
+  ADD KEY `fk_insp_insp` (`inspector_id`);
 
 --
 -- Indices de la tabla `inspeccion_detalles`
 --
 ALTER TABLE `inspeccion_detalles`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `inspeccion_id` (`inspeccion_id`),
-  ADD KEY `item_id` (`item_id`);
+  ADD KEY `fk_det_insp` (`inspeccion_id`),
+  ADD KEY `fk_det_item` (`item_id`);
 
 --
 -- Indices de la tabla `items_verificacion`
 --
 ALTER TABLE `items_verificacion`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `categoria_id` (`categoria_id`),
-  ADD KEY `area_id` (`area_id`);
+  ADD UNIQUE KEY `codigo` (`codigo`),
+  ADD KEY `fk_item_cat` (`categoria_id`);
 
 --
--- Indices de la tabla `notificaciones`
+-- Indices de la tabla `programa`
 --
-ALTER TABLE `notificaciones`
+ALTER TABLE `programa`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `usuario_id` (`usuario_id`);
+  ADD KEY `fk_prog_amb` (`ambiente_id`),
+  ADD KEY `fk_prog_inst` (`instructor_id`);
 
 --
 -- Indices de la tabla `sedes_areas`
@@ -237,7 +281,7 @@ ALTER TABLE `sedes_areas`
 ALTER TABLE `usuarios`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `correo_insti` (`correo_insti`),
-  ADD KEY `area_id` (`area_id`);
+  ADD KEY `fk_user_area` (`area_id`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -253,13 +297,13 @@ ALTER TABLE `acciones_correctivas`
 -- AUTO_INCREMENT de la tabla `ambientes`
 --
 ALTER TABLE `ambientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `categorias`
 --
 ALTER TABLE `categorias`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `inspecciones`
@@ -277,25 +321,25 @@ ALTER TABLE `inspeccion_detalles`
 -- AUTO_INCREMENT de la tabla `items_verificacion`
 --
 ALTER TABLE `items_verificacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT de la tabla `notificaciones`
+-- AUTO_INCREMENT de la tabla `programa`
 --
-ALTER TABLE `notificaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `programa`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `sedes_areas`
 --
 ALTER TABLE `sedes_areas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Restricciones para tablas volcadas
@@ -305,48 +349,48 @@ ALTER TABLE `usuarios`
 -- Filtros para la tabla `acciones_correctivas`
 --
 ALTER TABLE `acciones_correctivas`
-  ADD CONSTRAINT `acciones_correctivas_ibfk_1` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`),
-  ADD CONSTRAINT `acciones_correctivas_ibfk_2` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
+  ADD CONSTRAINT `fk_acc_insp` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`),
+  ADD CONSTRAINT `fk_acc_item` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
 
 --
 -- Filtros para la tabla `ambientes`
 --
 ALTER TABLE `ambientes`
-  ADD CONSTRAINT `ambientes_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+  ADD CONSTRAINT `fk_ambiente_area` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
 
 --
 -- Filtros para la tabla `inspecciones`
 --
 ALTER TABLE `inspecciones`
-  ADD CONSTRAINT `inspecciones_ibfk_1` FOREIGN KEY (`ambiente_id`) REFERENCES `ambientes` (`id`),
-  ADD CONSTRAINT `inspecciones_ibfk_2` FOREIGN KEY (`instructor_id`) REFERENCES `usuarios` (`id`),
-  ADD CONSTRAINT `inspecciones_ibfk_3` FOREIGN KEY (`inspector_id`) REFERENCES `usuarios` (`id`);
+  ADD CONSTRAINT `fk_insp_amb` FOREIGN KEY (`ambiente_id`) REFERENCES `ambientes` (`id`),
+  ADD CONSTRAINT `fk_insp_insp` FOREIGN KEY (`inspector_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `fk_insp_inst` FOREIGN KEY (`instructor_id`) REFERENCES `usuarios` (`id`);
 
 --
 -- Filtros para la tabla `inspeccion_detalles`
 --
 ALTER TABLE `inspeccion_detalles`
-  ADD CONSTRAINT `inspeccion_detalles_ibfk_1` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`),
-  ADD CONSTRAINT `inspeccion_detalles_ibfk_2` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
+  ADD CONSTRAINT `fk_det_insp` FOREIGN KEY (`inspeccion_id`) REFERENCES `inspecciones` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_det_item` FOREIGN KEY (`item_id`) REFERENCES `items_verificacion` (`id`);
 
 --
 -- Filtros para la tabla `items_verificacion`
 --
 ALTER TABLE `items_verificacion`
-  ADD CONSTRAINT `items_verificacion_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`),
-  ADD CONSTRAINT `items_verificacion_ibfk_2` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+  ADD CONSTRAINT `fk_item_cat` FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`);
 
 --
--- Filtros para la tabla `notificaciones`
+-- Filtros para la tabla `programa`
 --
-ALTER TABLE `notificaciones`
-  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+ALTER TABLE `programa`
+  ADD CONSTRAINT `fk_prog_amb` FOREIGN KEY (`ambiente_id`) REFERENCES `ambientes` (`id`),
+  ADD CONSTRAINT `fk_prog_inst` FOREIGN KEY (`instructor_id`) REFERENCES `usuarios` (`id`);
 
 --
 -- Filtros para la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
+  ADD CONSTRAINT `fk_user_area` FOREIGN KEY (`area_id`) REFERENCES `sedes_areas` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
