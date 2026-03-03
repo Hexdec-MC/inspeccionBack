@@ -17,6 +17,7 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
             localStorage.setItem("sst_token", "fake-jwt-token"); // Tu API actual no genera JWT, pon uno temporal
             localStorage.setItem("user_id", usuario.id.toString());
             localStorage.setItem("user_name", usuario.nombre);
+            localStorage.setItem("user_cargo", usuario.cargo);
 
             return redirect("/");
     } catch (error: any) {

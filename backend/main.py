@@ -199,5 +199,50 @@ async def upload_excel(file: UploadFile = File(...)):
     finally:
         conn.close()
 
+@app.get("/api/v1/usuarios/{id_usuario}/stats-instructor", tags=["Dashboard"])
+def get_stats_instructor(id_usuario: int):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Total de inspecciones realizadas por el instructor
+        cursor.execute("SELECT COUNT(*) as total FROM inspecciones WHERE instructor_id = %s", (id_usuario,))
+        total = cursor.fetchone()['total']
+
+        # 2. Inspecciones que aún no tienen firma del inspector (estado 'Enviado')
+        cursor.execute("SELECT COUNT(*) as pendientes FROM inspecciones WHERE instructor_id = %s AND estado = 'Enviado'", (id_usuario,))
+        pendientes = cursor.fetchone()['pendientes']
+
+        # 3. Próxima inspección programada
+        cursor.execute("SELECT fecha_programada FROM programa WHERE instructor_id = %s AND vigencia = 1 AND fecha_programada >= CURDATE() ORDER BY fecha_programada ASC LIMIT 1", (id_usuario,))
+        proxima = cursor.fetchone()
+        fecha_prox = proxima['fecha_programada'].strftime('%d/%m/%Y') if proxima else "Sin programar"
+
+        return api_response(data={
+            "total_enviados": total,
+            "falta_firma": pendientes,
+            "proxima_fecha": fecha_prox
+        })
+    finally:
+        conn.close()
+        
+@app.get("/api/v1/usuarios/{id_usuario}/actividad-reciente", tags=["Dashboard"])
+def get_actividad_instructor(id_usuario: int):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT i.uuid, i.fecha_creacion, i.estado, a.nombre_ambiente
+            FROM inspecciones i
+            JOIN ambientes a ON i.ambiente_id = a.id
+            WHERE i.instructor_id = %s
+            ORDER BY i.fecha_creacion DESC
+            LIMIT 5
+        """
+        cursor.execute(query, (id_usuario,))
+        actividad = cursor.fetchall()
+        return api_response(data=actividad)
+    finally:
+        conn.close()
+
 from storage_service import router as storage_router
 app.include_router(storage_router)

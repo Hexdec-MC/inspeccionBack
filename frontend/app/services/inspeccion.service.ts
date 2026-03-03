@@ -24,7 +24,14 @@ export const getSedes = async () => {
     return response.data;
 };
 export const postInspeccion = async (payload: any) => {
+    // Endpoint: POST /api/v1/inspecciones
     const { data } = await sstApi.post("/inspecciones", payload);
+    return data;
+};
+
+export const getItemsVerificacion = async () => {
+    // Este endpoint debería retornar la lista de preguntas/ítems
+    const { data } = await sstApi.get("/admin/items-lista"); 
     return data;
 };
 
